@@ -1,0 +1,5 @@
+{
+  "name": "ShapeFrame",
+  "description": "A minimalist app that records the day by taking photos through specific shape masks.",
+  "requestFramePermissions": ["camera"]
+}
