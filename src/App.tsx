@@ -14,10 +14,10 @@ interface Moment {
 }
 
 const SHAPES: Record<ShapeType, { label: string; icon: React.ReactNode; clipPath: string; aspectRatio: string }> = {
-  circle: { label: 'Circle', icon: <Circle className="w-8 h-8" />, clipPath: 'circle(50% at 50% 50%)', aspectRatio: '1/1' },
-  square: { label: 'Square', icon: <Square className="w-8 h-8" />, clipPath: 'inset(0)', aspectRatio: '1/1' },
-  triangle: { label: 'Triangle', icon: <Triangle className="w-8 h-8" />, clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', aspectRatio: '1/1' },
-  pill: { label: 'Pill', icon: <RectangleHorizontal className="w-8 h-8" />, clipPath: 'inset(0 round 9999px)', aspectRatio: '2/3' },
+  circle: { label: '원', icon: <Circle className="w-8 h-8" />, clipPath: 'circle(50% at 50% 50%)', aspectRatio: '1/1' },
+  square: { label: '사각형', icon: <Square className="w-8 h-8" />, clipPath: 'inset(0)', aspectRatio: '1/1' },
+  triangle: { label: '삼각형', icon: <Triangle className="w-8 h-8" />, clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', aspectRatio: '1/1' },
+  pill: { label: '알약', icon: <RectangleHorizontal className="w-8 h-8" />, clipPath: 'inset(0 round 9999px)', aspectRatio: '2/3' },
 };
 
 type ViewState = 'timeline' | 'select-shape' | 'camera';
@@ -27,6 +27,20 @@ export default function App() {
   const [view, setView] = useState<ViewState>('timeline');
   const [selectedShape, setSelectedShape] = useState<ShapeType | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    try {
+      return !localStorage.getItem('shapeframe_onboarded');
+    } catch {
+      return true;
+    }
+  });
+
+  const dismissOnboarding = () => {
+    try {
+      localStorage.setItem('shapeframe_onboarded', 'true');
+    } catch {}
+    setShowOnboarding(false);
+  };
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -233,7 +247,7 @@ export default function App() {
                 onClick={exportDailyVideo}
                 disabled={isExporting}
                 className="w-10 h-10 bg-white brutal-button flex items-center justify-center rounded-full disabled:opacity-50"
-                title="Export Daily Video"
+                title="오늘의 영상 내보내기"
               >
                 {isExporting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Film className="w-5 h-5" />}
               </button>
@@ -255,7 +269,7 @@ export default function App() {
             <div className="w-24 h-24 border-2 border-dashed border-black rounded-full flex items-center justify-center">
               <Camera className="w-8 h-8" />
             </div>
-            <p className="font-mono text-sm">No moments recorded today.<br/>Choose a shape and capture.</p>
+            <p className="font-mono text-sm">오늘 기록된 순간이 없습니다.<br/>도형을 선택하고 촬영해보세요.</p>
           </div>
         ) : (
           <div className="space-y-12 relative pb-20">
@@ -318,7 +332,7 @@ export default function App() {
             className="absolute inset-0 bg-white z-50 flex flex-col"
           >
             <div className="p-4 border-b-2 border-black flex justify-between items-center bg-[#f4f4f0]">
-              <h2 className="font-display font-bold text-lg uppercase">Select Frame</h2>
+              <h2 className="font-display font-bold text-lg uppercase">프레임 선택</h2>
               <button onClick={() => setView('timeline')} className="p-2">
                 <X className="w-6 h-6" />
               </button>
@@ -350,7 +364,7 @@ export default function App() {
             className="absolute inset-0 bg-black z-50 flex flex-col"
           >
             <div className="p-4 flex justify-between items-center text-white z-10 absolute top-0 left-0 right-0">
-              <h2 className="font-display font-bold text-lg uppercase drop-shadow-md">Capture</h2>
+              <h2 className="font-display font-bold text-lg uppercase drop-shadow-md">촬영</h2>
               <button onClick={() => setView('select-shape')} className="p-2 drop-shadow-md">
                 <X className="w-6 h-6" />
               </button>
@@ -418,8 +432,49 @@ export default function App() {
             className="absolute inset-0 bg-black/80 z-[100] flex flex-col items-center justify-center text-white"
           >
             <Loader2 className="w-12 h-12 animate-spin mb-4 text-[#D4FF33]" />
-            <h3 className="font-display font-bold text-xl uppercase">Generating Video</h3>
-            <p className="font-mono text-sm opacity-70 mt-2">Stitching your moments...</p>
+            <h3 className="font-display font-bold text-xl uppercase">영상 생성 중</h3>
+            <p className="font-mono text-sm opacity-70 mt-2">순간들을 이어붙이는 중...</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Onboarding Overlay */}
+      <AnimatePresence>
+        {showOnboarding && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-[#D4FF33] z-[200] flex flex-col p-6"
+          >
+            <div className="flex-1 flex flex-col justify-center space-y-8">
+              <div className="space-y-4">
+                <h1 className="font-display font-bold text-4xl uppercase tracking-tighter">ShapeFrame</h1>
+                <p className="font-mono text-lg font-bold">도형으로 기록하는 나의 하루</p>
+              </div>
+              
+              <div className="space-y-6 bg-white brutal-border p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 bg-black text-white rounded-full flex items-center justify-center font-bold shrink-0">1</div>
+                  <p className="font-mono text-sm mt-1">원하는 <strong>도형 프레임</strong>을 선택하세요.</p>
+                </div>
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 bg-black text-white rounded-full flex items-center justify-center font-bold shrink-0">2</div>
+                  <p className="font-mono text-sm mt-1">도형 모양의 렌즈를 통해 <strong>세상을 캡처</strong>하세요.</p>
+                </div>
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 bg-black text-white rounded-full flex items-center justify-center font-bold shrink-0">3</div>
+                  <p className="font-mono text-sm mt-1">하루가 끝나면 <strong>하나의 영상</strong>으로 만들어 공유하세요.</p>
+                </div>
+              </div>
+            </div>
+            
+            <button
+              onClick={dismissOnboarding}
+              className="w-full py-4 bg-black text-white font-display font-bold text-xl uppercase brutal-button"
+            >
+              시작하기
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
